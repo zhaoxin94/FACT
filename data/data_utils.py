@@ -13,7 +13,7 @@ def dataset_info(filepath):
     for row in images_list:
         row = row.strip().split(' ')
         file_names.append(row[0])
-        labels.append(int(row[1]))
+        labels.append(int(row[1])-1)
 
     return file_names, labels
 

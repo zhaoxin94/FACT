@@ -15,8 +15,8 @@ source = ["photo", "cartoon", "art_painting", "sketch"]
 target = args.domain
 source.remove(target)
 
-input_dir = 'path/to/data'
-output_dir = 'path/to/output'
+input_dir = 'data/datalists'
+output_dir = 'output'
 
 config = "PACS/ResNet50"
 
