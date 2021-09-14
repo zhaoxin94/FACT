@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.functional as F
+from torch.cuda.amp import autocast
 
 from models.model_factory import *
 from optimizer.optimizer_helper import get_optim_and_scheduler
@@ -65,6 +66,9 @@ class Trainer:
         self.test_loader = get_test_loader(args=self.args, config=self.config)
         self.eval_loader = {'val': self.val_loader, 'test': self.test_loader}
 
+        # use amp
+        self.scaler = torch.cuda.amp.GradScaler()
+
     def _do_epoch(self):
         criterion = nn.CrossEntropyLoss()
 
@@ -91,60 +95,66 @@ class Trainer:
             num_samples_dict = {}
             total_loss = 0.0
 
-            features = self.encoder(batch)
-            scores = self.classifier(features)
-            with torch.no_grad():
-                features_teacher = self.encoder_teacher(batch)
-                scores_teacher = self.classifier_teacher(features_teacher)
+            with autocast():
+                features = self.encoder(batch)
+                scores = self.classifier(features)
+                with torch.no_grad():
+                    features_teacher = self.encoder_teacher(batch)
+                    scores_teacher = self.classifier_teacher(features_teacher)
 
-            assert batch.size(0) % 2 == 0
-            split_idx = int(batch.size(0) / 2)
-            scores_ori, scores_aug = torch.split(scores, split_idx)
-            scores_ori_tea, scores_aug_tea = torch.split(scores_teacher, split_idx)
-            scores_ori_tea, scores_aug_tea = scores_ori_tea.detach(), scores_aug_tea.detach()
-            labels_ori, labels_aug = torch.split(label, split_idx)
-            assert scores_ori.size(0) == scores_aug.size(0)
+                assert batch.size(0) % 2 == 0
+                split_idx = int(batch.size(0) / 2)
+                scores_ori, scores_aug = torch.split(scores, split_idx)
+                scores_ori_tea, scores_aug_tea = torch.split(scores_teacher, split_idx)
+                scores_ori_tea, scores_aug_tea = scores_ori_tea.detach(), scores_aug_tea.detach()
+                labels_ori, labels_aug = torch.split(label, split_idx)
+                assert scores_ori.size(0) == scores_aug.size(0)
 
-            # classification loss for original data
-            loss_cls = criterion(scores_ori, labels_ori)
-            loss_dict["main"] = loss_cls.item()
-            correct_dict["main"] = calculate_correct(scores_ori, labels_ori)
-            num_samples_dict["main"] = int(scores.size(0) / 2)
+                # classification loss for original data
+                loss_cls = criterion(scores_ori, labels_ori)
+                loss_dict["main"] = loss_cls.item()
+                correct_dict["main"] = calculate_correct(scores_ori, labels_ori)
+                num_samples_dict["main"] = int(scores.size(0) / 2)
 
-            # classification loss for augmented data
-            loss_aug = criterion(scores_aug, labels_aug)
-            loss_dict["aug"] = loss_aug.item()
-            correct_dict["aug"] = calculate_correct(scores_aug, labels_aug)
-            num_samples_dict["aug"] = int(scores.size(0) / 2)
+                # classification loss for augmented data
+                loss_aug = criterion(scores_aug, labels_aug)
+                loss_dict["aug"] = loss_aug.item()
+                correct_dict["aug"] = calculate_correct(scores_aug, labels_aug)
+                num_samples_dict["aug"] = int(scores.size(0) / 2)
 
-            # calculate probability
-            p_ori, p_aug = F.softmax(scores_ori / self.config["T"], dim=1), F.softmax(scores_aug / self.config["T"], dim=1)
-            p_ori_tea, p_aug_tea = F.softmax(scores_ori_tea / self.config["T"], dim=1), F.softmax(scores_aug_tea / self.config["T"], dim=1)
+                # calculate probability
+                p_ori, p_aug = F.softmax(scores_ori / self.config["T"], dim=1), F.softmax(scores_aug / self.config["T"], dim=1)
+                p_ori_tea, p_aug_tea = F.softmax(scores_ori_tea / self.config["T"], dim=1), F.softmax(scores_aug_tea / self.config["T"], dim=1)
 
-            # use KLD for consistency loss
-            loss_ori_tea = F.kl_div(p_aug.log(), p_ori_tea, reduction='batchmean')
-            loss_aug_tea = F.kl_div(p_ori.log(), p_aug_tea, reduction='batchmean')
+                # use KLD for consistency loss
+                loss_ori_tea = F.kl_div(p_aug.log(), p_ori_tea, reduction='batchmean')
+                loss_aug_tea = F.kl_div(p_ori.log(), p_aug_tea, reduction='batchmean')
 
-            # get consistency weight
-            const_weight = get_current_consistency_weight(epoch=self.current_epoch,
-                                                          weight=self.config["lam_const"],
-                                                          rampup_length=self.config["warmup_epoch"],
-                                                          rampup_type=self.config["warmup_type"])
+                # get consistency weight
+                const_weight = get_current_consistency_weight(epoch=self.current_epoch,
+                                                            weight=self.config["lam_const"],
+                                                            rampup_length=self.config["warmup_epoch"],
+                                                            rampup_type=self.config["warmup_type"])
 
-            # calculate total loss
-            total_loss = 0.5 * loss_cls + 0.5 * loss_aug + \
-                         const_weight * loss_ori_tea + const_weight * loss_aug_tea
+                # calculate total loss
+                total_loss = 0.5 * loss_cls + 0.5 * loss_aug + \
+                            const_weight * loss_ori_tea + const_weight * loss_aug_tea
 
             loss_dict["ori_tea"] = loss_ori_tea.item()
             loss_dict["aug_tea"] = loss_aug_tea.item()
             loss_dict["total"] = total_loss.item()
 
             # backward
-            total_loss.backward()
+            # total_loss.backward()
+            self.scaler.scale(total_loss).backward()
 
             # update
-            self.encoder_optim.step()
-            self.classifier_optim.step()
+            # self.encoder_optim.step()
+            # self.classifier_optim.step()
+            self.scaler.step(self.encoder_optim)
+            self.scaler.step(self.classifier_optim)
+            self.scaler.update()
+
             self.global_step += 1
 
             # update teachers

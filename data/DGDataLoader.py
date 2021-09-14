@@ -9,7 +9,7 @@ default_input_dir = 'path/to/datalists/'
 
 digits_datset = ["mnist", "mnist_m", "svhn", "syn"]
 pacs_dataset = ["art_painting", "cartoon", "photo", "sketch"]
-officehome_dataset = ['Art', 'Clipart', 'Product', 'Real_World']
+officehome_dataset = ['art', 'clipart', 'product', 'real_world']
 available_datasets = pacs_dataset + officehome_dataset + digits_datset
 
 

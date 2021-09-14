@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from math import sqrt
 
-def dataset_info(filepath):
+def dataset_info(filepath, dataset):
     with open(filepath, 'r') as f:
         images_list = f.readlines()
 
@@ -13,7 +13,11 @@ def dataset_info(filepath):
     for row in images_list:
         row = row.strip().split(' ')
         file_names.append(row[0])
-        labels.append(int(row[1])-1)
+        if dataset == 'pacs':
+            labels.append(int(row[1])-1)
+        else:
+            labels.append(int(row[1]))
+
 
     return file_names, labels
 

@@ -3,22 +3,27 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--domain", "-d", default="sketch", help="Target")
+parser.add_argument("--dataset", "-d", default='pacs', help='Dataset')
+parser.add_argument("--target", "-t", default="sketch", help="Target")
 parser.add_argument("--gpu", "-g", default=0, type=int, help="Gpu ID")
-parser.add_argument("--times", "-t", default=1, type=int, help="Repeat times")
+parser.add_argument("--times", "-n", default=1, type=int, help="Repeat times")
 
 args = parser.parse_args()
 
 ###############################################################################
 
-source = ["photo", "cartoon", "art_painting", "sketch"]
-target = args.domain
+if args.dataset == 'pacs':
+    source = ["photo", "cartoon", "art_painting", "sketch"]
+    input_dir = 'data/pacs'
+    config = "PACS/ResNet50"
+elif args.dataset == 'officehome':
+    source = ['art', 'clipart', 'product', 'real_world']
+    input_dir = 'data/officehome'
+    config = "OfficeHome/ResNet50"
+target = args.target
 source.remove(target)
 
-input_dir = 'data/datalists'
 output_dir = 'output'
-
-config = "PACS/ResNet50"
 
 domain_name = target
 path = os.path.join(output_dir, config.replace("/", "_"), domain_name)

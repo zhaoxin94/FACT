@@ -82,7 +82,7 @@ class FourierDGDataset(Dataset):
 
 
 def get_dataset(path, train=False, image_size=224, crop=False, jitter=0, config=None):
-    names, labels = dataset_info(path)
+    names, labels = dataset_info(path, config["dataset"])
     if config:
         image_size = config["image_size"]
         crop = config["use_crop"]
@@ -96,7 +96,7 @@ def get_fourier_dataset(path, image_size=224, crop=False, jitter=0, from_domain=
     names = []
     labels = []
     for p in path:
-        name, label = dataset_info(p)
+        name, label = dataset_info(p, config["dataset"])
         names.append(name)
         labels.append(label)
 

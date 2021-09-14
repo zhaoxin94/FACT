@@ -1,16 +1,16 @@
 config = {}
 
 batch_size = 16
-epoch = 50
+epoch = 30
 warmup_epoch = 5
 warmup_type = "sigmoid"
 lr = 0.001
 lr_decay_rate = 0.1
 teacher_momentum = 0.9995   # momentum for mean teacher
-lam_const = 2.0    # loss weight for consistency loss
+lam_const = 200.0    # loss weight for consistency loss
 T = 10.0
 
-num_classes = 7
+num_classes = 65
 
 config["batch_size"] = batch_size
 config["epoch"] = epoch
@@ -27,7 +27,8 @@ data_opt = {
     "use_crop": True,
     "jitter": 0.4,
     "from_domain": "all",
-    "alpha": 1.0,
+    "alpha": 0.2,
+    "dataset": "officehome"
 }
 
 config["data_opt"] = data_opt

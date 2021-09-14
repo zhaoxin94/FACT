@@ -28,6 +28,7 @@ data_opt = {
     "jitter": 0.4,
     "from_domain": "all",
     "alpha": 1.0,
+    "dataset": "pacs"
 }
 
 config["data_opt"] = data_opt
