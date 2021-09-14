@@ -1,6 +1,5 @@
 import os
 from time import time, localtime, strftime
-from .tf_logger import TFLogger
 import torch
 import json
 
@@ -22,10 +21,7 @@ class Logger():
         self.config = config
         self.log_path = self.get_name_from_args(args)
 
-        if args.tf_logger:
-            self.tf_logger = TFLogger(self.log_path)
-        else:
-            self.tf_logger = None
+        self.tf_logger = None
 
     def new_epoch(self, learning_rates):
         self.current_epoch += 1
