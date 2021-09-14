@@ -1,9 +1,11 @@
 from models import ResNet
 from models import classifier
+from models import Transformer
 
 encoders_map = {
     'resnet18': ResNet.resnet18,
     'resnet50': ResNet.resnet50,
+    'swin_tiny': Transformer.swin_tiny,
 }
 
 classifiers_map = {
