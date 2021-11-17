@@ -89,7 +89,9 @@ class Trainer:
         self.encoder.train()
         self.classifier.train()
 
-        for it, (batch, label) in enumerate(self.train_loader):
+        for it, (batch, dset_idx) in enumerate(self.train_loader):
+            img = batch[0].to(self.device)
+            label = batch[1].to(self.device)
 
             # zero grad
             self.encoder_optim.zero_grad()
@@ -102,7 +104,7 @@ class Trainer:
             total_loss = 0.0
 
             with autocast():
-                features = self.encoder(batch)
+                features = self.encoder(img)
                 scores = self.classifier(features)
                 total_loss = criterion(scores, label)
 

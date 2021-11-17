@@ -38,13 +38,13 @@ config["data_opt"] = data_opt
 networks = {}
 
 encoder = {
-    "name": "resnet50",
+    "name": "resnet18",
 }
 networks["encoder"] = encoder
 
 classifier = {
     "name": "base",
-    "in_dim": 2048,
+    "in_dim": 512,
     "num_classes": num_classes,
     "cls_type": "linear"
 }

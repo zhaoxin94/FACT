@@ -36,7 +36,7 @@ print("config name:", config)
 target = args.target
 source.remove(target)
 
-output_dir = 'output_FA'
+output_dir = 'output_baseline'
 
 domain_name = target
 path = os.path.join(output_dir, config.replace("/", "_"), domain_name)
@@ -44,7 +44,7 @@ path = os.path.join(output_dir, config.replace("/", "_"), domain_name)
 
 for i in range(args.times):
     os.system(f'CUDA_VISIBLE_DEVICES={args.gpu} '
-              f'python train_baseline.py '
+              f'python baseline.py '
               f'--source {source[0]} {source[1]} {source[2]} '
               f'--target {target} '
               f'--input_dir {input_dir} '
