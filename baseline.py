@@ -69,8 +69,11 @@ class Trainer:
             get_optim_and_scheduler(self.classifier, self.config["optimizer"]["classifier_optimizer"])
 
         # dataloaders
-        self.train_loader = get_fourier_train_dataloader(args=self.args,
-                                                         config=self.config)
+        # TODO: need to modify
+        # self.train_loader = get_fourier_train_dataloader(args=self.args,
+        #                                                  config=self.config)
+        self.train_loader = get_train_dataloader(args=self.args,
+                                                 config=self.config)
         self.val_loader = get_val_dataloader(args=self.args,
                                              config=self.config)
         self.test_loader = get_test_loader(args=self.args, config=self.config)
@@ -86,12 +89,7 @@ class Trainer:
         self.encoder.train()
         self.classifier.train()
 
-        for it, (batch, label, domain) in enumerate(self.train_loader):
-
-            # preprocessing
-            batch = torch.cat(batch, dim=0).to(self.device)
-            label = torch.cat(label, dim=0).to(self.device)
-            # domain = torch.cat(domain, dim=0).to(self.device)
+        for it, (batch, label) in enumerate(self.train_loader):
 
             # zero grad
             self.encoder_optim.zero_grad()
@@ -106,52 +104,21 @@ class Trainer:
             with autocast():
                 features = self.encoder(batch)
                 scores = self.classifier(features)
+                total_loss = criterion(scores, label)
 
-                assert batch.size(0) % 2 == 0
-                split_idx = int(batch.size(0) / 2)
-                scores_ori, scores_aug = torch.split(scores, split_idx)
-                labels_ori, labels_aug = torch.split(label, split_idx)
-                assert scores_ori.size(0) == scores_aug.size(0)
-
-                # classification loss for original data
-                loss_cls = criterion(scores_ori, labels_ori)
-                loss_dict["main"] = loss_cls.item()
-                correct_dict["main"] = calculate_correct(
-                    scores_ori, labels_ori)
-                num_samples_dict["main"] = int(scores.size(0) / 2)
-
-                # classification loss for augmented data
-                loss_aug = criterion(scores_aug, labels_aug)
-                loss_dict["aug"] = loss_aug.item()
-                correct_dict["aug"] = calculate_correct(scores_aug, labels_aug)
-                num_samples_dict["aug"] = int(scores.size(0) / 2)
-
-                total_loss = loss_cls + loss_aug
-
-            # loss_dict["ori_tea"] = loss_ori_tea.item()
-            # loss_dict["aug_tea"] = loss_aug_tea.item()
             loss_dict["total"] = total_loss.item()
+            correct_dict["main"] = calculate_correct(scores, label)
+            num_samples_dict["main"] = int(scores.size(0))
 
             # backward
-            # total_loss.backward()
             self.scaler.scale(total_loss).backward()
 
             # update
-            # self.encoder_optim.step()
-            # self.classifier_optim.step()
             self.scaler.step(self.encoder_optim)
             self.scaler.step(self.classifier_optim)
             self.scaler.update()
 
             self.global_step += 1
-
-            # update teachers
-            # warm_update_teacher(self.encoder, self.encoder_teacher,
-            #                     self.config["teacher_momentum"],
-            #                     self.global_step)
-            # warm_update_teacher(self.classifier, self.classifier_teacher,
-            #                     self.config["teacher_momentum"],
-            #                     self.global_step)
 
             # record
             self.logger.log(it=it,
@@ -163,8 +130,6 @@ class Trainer:
         # turn on eval mode
         self.encoder.eval()
         self.classifier.eval()
-        # self.encoder_teacher.eval()
-        # self.classifier_teacher.eval()
 
         # evaluation
         with torch.no_grad():
