@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     directory = args.directory
     dataset = directory.split('_')[0]
-    directory = osp.join('output', directory)
+    directory = osp.join('output_FA', directory)
     domains = os.listdir(directory)
     domains.sort()
 

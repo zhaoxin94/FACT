@@ -6,6 +6,7 @@ encoders_map = {
     'resnet18': ResNet.resnet18,
     'resnet50': ResNet.resnet50,
     'swin_tiny': Transformer.swin_tiny,
+    'deit_small': Transformer.deit_small
 }
 
 classifiers_map = {

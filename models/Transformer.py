@@ -21,3 +21,11 @@ def swin_tiny(pretrained=True, **kwargs):
     model = Transformer('swin_tiny_patch4_window7_224', pretrained=pretrained)
 
     return model
+
+def deit_small(pretrained=True, **kwargs):
+    """ DeiT-small model @ 224x224 from paper (https://arxiv.org/abs/2012.12877).
+    ImageNet-1k weights from https://github.com/facebookresearch/deit.
+    """
+    model = Transformer('deit_small_patch16_224', pretrained=pretrained)
+
+    return model

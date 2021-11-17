@@ -26,6 +26,8 @@ if args.backbone == 'resnet50':
     config += "ResNet50"
 elif args.backbone == 'swin_tiny':
     config += "Swin_tiny"
+elif args.backbone == 'deit_small':
+    config += "Deit_small"
 
 print("config name:", config)
 
