@@ -1,5 +1,9 @@
 ## FACT
 
+### Fork
+Adapt to my own environment and reproduce the results reported by the author!
+
+
 This repo provides a demo for the CVPR 2021 paper "A Fourier-based Framework for Domain Generalization" on the PACS dataset.
 
 To cite, please use:
